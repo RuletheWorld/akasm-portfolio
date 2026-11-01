@@ -82,8 +82,8 @@ export const site = {
     airline: "MERCHANT AIR", // TODO: Raphael's own invented airline / brand line
     tagline: "PHOTO ART DIRECTION · CREATIVE PRODUCTION",
     flight: "RM2018", // initials + the year akasm was founded
-    from: { code: "YYZ", city: "TORONTO / MISSISSAUGA" },
-    to: { code: "NXT", city: "YOUR TEAM" }, // TODO: destination = his next role
+    from: { code: "LHR", city: "LONDON" }, // Raphael's story: London → Toronto
+    to: { code: "YYZ", city: "TORONTO" },
     date: "OPEN DATE",
     gate: "AD",
     boarding: "NOW",

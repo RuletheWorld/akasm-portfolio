@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { clamp, easeInOutCubic, spring } from "@/lib/motion";
 import { KEY_DARK, store } from "@/lib/storage";
 import { play } from "@/lib/sound";
+import SkyCanvas from "./SkyCanvas";
 
-const OPEN = 0.1, CLOSED = 0.9;
+// Closed stops halfway so the night sky (moon, stars, clouds) stays visible below the shade.
+const OPEN = 0.1, CLOSED = 0.5, MID = (OPEN + CLOSED) / 2;
 
 export default function HeroWindow() {
   const pane = useRef<HTMLDivElement>(null);
@@ -42,7 +44,7 @@ export default function HeroWindow() {
   }, [paint]);
 
   const arrived = () => {
-    const dark = s.current.x > 0.5;
+    const dark = s.current.x > MID;
     if (dark) play("shade", 0.2);
     applyTheme(dark);
   };
@@ -90,20 +92,20 @@ export default function HeroWindow() {
     if (!st.dragging) return;
     st.dragging = false;
     document.body.style.cursor = "";
-    if (!st.moved) { tweenTo(st.target > 0.5 ? OPEN : CLOSED); st.target = st.target > 0.5 ? OPEN : CLOSED; return; }
-    const target = st.v > 1.6 ? CLOSED : st.v < -1.6 ? OPEN : st.x > 0.5 ? CLOSED : OPEN;
+    if (!st.moved) { tweenTo(st.target > MID ? OPEN : CLOSED); st.target = st.target > MID ? OPEN : CLOSED; return; }
+    const target = st.v > 1.6 ? CLOSED : st.v < -1.6 ? OPEN : st.x > MID ? CLOSED : OPEN;
     play("toggle", 0.4);
     settle(target);
   };
   const key = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const t = s.current.target > 0.5 ? OPEN : CLOSED; s.current.target = t; tweenTo(t); }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const t = s.current.target > MID ? OPEN : CLOSED; s.current.target = t; tweenTo(t); }
   };
 
   return (
     <div ref={root} className="hero-window reveal" style={{ ["--reveal-delay" as string]: "0ms" }}>
       <div className="hw-bezel">
         <div ref={pane} className="hw-pane">
-          <div className="hw-sky"><span className="cloud c1" /><span className="cloud c2" /><span className="cloud c3" /><span className="hw-sun" /></div>
+          <div className="hw-sky"><SkyCanvas /></div>
           <div className="hw-shutter"><span className="hw-lip" /></div>
           <div className="hw-glare" />
         </div>
