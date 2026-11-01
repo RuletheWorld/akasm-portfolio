@@ -142,7 +142,7 @@ html.is-covered .gate { display: block; position: fixed; inset: 0; z-index: 50; 
 }
 .hw-pane { position: relative; width: 100%; height: 100%; border-radius: 66px / 76px; overflow: hidden; box-shadow: 0 0 0 5px #efe9df, 0 0 0 6px #cfc7b9, inset 0 6px 14px rgb(0 0 0 / .25); background: #9cc3ef; }
 .hw-sky { position: absolute; inset: 0; background: linear-gradient(to bottom, #6fa3e6 0%, #a5c8f0 46%, #e6ecf5 52%, #d9e1ee 100%); }
-.hw-clouds { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hw-clouds { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); display: block; filter: blur(1px); }
 [data-theme="dark"] .hw-sky { background: linear-gradient(to bottom, #05091a 0%, #1f2a47 48%, #1b2236 54%, #0d1222 100%); }
 .hw-shutter { position: absolute; left: 0; right: 0; top: 0; height: 100%; transform: translateY(calc((var(--shade) - 1) * 100%)); background: linear-gradient(to bottom, #e9e4da, #f4f0e8 92%, #d9d2c4); box-shadow: 0 3px 6px rgb(0 0 0 / .22); }
 .hw-lip { position: absolute; left: 50%; bottom: 6px; width: 34px; height: 5px; margin-left: -17px; border-radius: 3px; background: #cfc6b6; box-shadow: inset 0 1px 1px rgb(0 0 0 / .2); }

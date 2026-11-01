@@ -1,16 +1,18 @@
 "use client";
 /**
- * Procedurally generated sky behind the cabin window.
+ * Procedurally generated volumetric sky behind the cabin window (see lib/skyShader.ts).
  * - Seeded per load (or `?seed=12` for repeatable screenshots).
- * - Drifts slowly at <= 30fps, and only while on screen and the tab is visible.
+ * - Raymarched at reduced resolution (upscaled + softened by CSS), dithered, <= 30fps,
+ *   and only while on screen and the tab is visible. `?skyperf` records GPU frame times.
  * - prefers-reduced-motion: renders a single static frame.
  * - Follows the theme (day <-> night) with a short crossfade.
  * - No WebGL: paints a static seeded noise deck once with 2D canvas.
  */
 import { useEffect, useRef } from "react";
-import { SKY_FRAG, SKY_VERT } from "@/lib/skyShader";
+import { SKY_FRAG, SKY_VERT, makeNoiseTable } from "@/lib/skyShader";
 
-const RES = 0.6; // render scale vs CSS px * DPR; clouds are soft, so upscaling is invisible
+// Render scale vs CSS px (DPR capped at 1.5): ~0.55-0.8x CSS res, upscaled by the browser.
+const RES = 0.55;
 const isDark = () => document.documentElement.dataset.theme === "dark";
 
 function pickSeed() {
@@ -28,7 +30,7 @@ export default function SkyCanvas() {
     const seed = pickSeed();
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     const size = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const w = Math.max(32, Math.round(cv.clientWidth * dpr * RES));
       const h = Math.max(32, Math.round(cv.clientHeight * dpr * RES));
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; return true; }
@@ -66,6 +68,18 @@ export default function SkyCanvas() {
     const uTime = gl.getUniformLocation(prog, "uTime");
     const uNight = gl.getUniformLocation(prog, "uNight");
     gl.uniform1f(gl.getUniformLocation(prog, "uSeed"), seed);
+    const tex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 256, 0, gl.RGBA, gl.UNSIGNED_BYTE, makeNoiseTable(seed));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.uniform1i(gl.getUniformLocation(prog, "uNoise"), 0);
+    const perf: number[] | null = new URLSearchParams(location.search).has("skyperf") ? [] : null;
+    if (perf) (window as unknown as { __skyPerf: number[] }).__skyPerf = perf;
+    const px = new Uint8Array(4);
 
     const st = { time: seed * 3.7, night: isDark() ? 1 : 0, target: isDark() ? 1 : 0, last: 0, raf: 0, visible: true, lost: false };
 
@@ -74,7 +88,11 @@ export default function SkyCanvas() {
       gl.uniform2f(uRes, cv.width, cv.height);
       gl.uniform1f(uTime, st.time);
       gl.uniform1f(uNight, st.night);
+      if (!perf) { gl.drawArrays(gl.TRIANGLES, 0, 3); return; }
+      const t0 = performance.now();
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // forces the GPU to finish
+      perf.push(performance.now() - t0);
     };
 
     const frame = (now: number) => {
