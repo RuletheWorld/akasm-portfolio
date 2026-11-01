@@ -1,4 +1,11 @@
 node_modules/
 .next/
+out/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
 ._*
 *.DS_Store
+# research material must never be committed
+research/
+shots/
