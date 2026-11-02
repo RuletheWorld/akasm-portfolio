@@ -2,19 +2,27 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *  content/site.ts — THE ONE FILE TO EDIT
  * ─────────────────────────────────────────────────────────────────────────────
- *  Every word on the site comes from here. Facts were seeded ONLY from
- *  Raphael's master résumé (master_muse_1024.pdf) plus the confirmed brief.
+ *  Every word on the site comes from here. Facts come from Raphael's master
+ *  ATS résumé (canon) and copy/images carried over from the previous portfolio.
+ *  Where the two disagreed, the résumé wins.
  *
- *  Search for "TODO" to find everything that still needs Raphael's input.
- *  Rules: never invent clients, numbers, dates or skills. Studio Nostalgia is
- *  its own employer: never merge it with akasm, never give it a project count.
+ *  Rules: never invent clients, numbers, dates or skills. Brand clients belong
+ *  to akasm only. Studio Nostalgia is its own employer: never merge it with
+ *  akasm, never give it a project count or brand clients.
+ *  Images live in /public/work/<slug>/; add each new file's [width, height]
+ *  to content/media.ts so next/image can size it.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 export type CaseSlug =
-  | "photo-art-direction"
   | "costar"
   | "akasm"
+  | "lovecorn"
+  | "carhartt"
+  | "benz"
+  | "landscape"
+  | "ai-horses"
+  | "photo-art-direction"
   | "studio-nostalgia"
   | "bricks";
 
@@ -36,50 +44,66 @@ export type Entry = {
   show?: boolean;
 };
 
+export type Figure = { caption: string; src: string };
+
 export type CaseStudy = {
   slug: CaseSlug;
   title: string;
   eyebrow: string[];
   sub: string;
   role: string;
-  years: string;
-  /** Paragraphs. Placeholders are clearly marked TODO. */
+  /** Omit when the old portfolio gave no dates for the piece. */
+  years?: string;
   body: string[];
   facts: { label: string; value: string }[];
-  /** Image slots: ratio is width/height. Replace `src` with files in /public/work/<slug>/ */
-  figures: { caption: string; ratio: number; src?: string }[];
-  /** Optional before/after (great for retouching / grading). */
+  /** Files in /public/work/<slug>/. Size comes from content/media.ts. */
+  figures: Figure[];
+  links?: { label: string; href: string }[];
+  /** Optional before/after (only with a true capture/edit pair of identical framing). */
   compare?: { caption: string; before?: string; after?: string };
 };
+
+/** Brand clients — akasm commissions only (canon list). */
+const AKASM_CLIENTS = ["Starbucks", "Chipotle", "Best Buy", "Roots", "Uber Eats", "DoorDash", "Storage Mart", "LoveCorn", "Carhartt"];
+
+const w = (slug: string, file: string) => `/work/${slug}/${file}`;
 
 export const site = {
   name: "Raphael Merchant",
   /** Passenger line on the boarding pass (LAST / FIRST). */
   passengerName: "MERCHANT / RAPHAEL",
-  monogram: "RM", // TODO: replace with Raphael's real monogram/logo (SVG) when ready
-  title: "Photo Art Director & Creative Producer",
-  /** TODO: Raphael to approve or rewrite this two-line intro (paraphrased from the résumé). */
+  monogram: "RM", // Placeholder monogram (also drawn on the pass) — swap for a real mark if Kam supplies one.
+  title: "Photographer & Art Director",
   intro:
-    "Art-directing and producing photo, film and aerial work for brands, real estate and studios — from shot list to final delivery.",
+    "Photographer and art director in Mississauga — cinematic, character-first stills, film and aerial for brands, real estate and studios, from shot list to final delivery.",
   location: "Mississauga, ON",
   coords: { lat: 43.589, lon: -79.6441 },
   timeZone: "America/Toronto",
-  url: "https://akasm-portfolio.vercel.app", // TODO: confirm the final domain
+  url: "https://akasm-portfolio.vercel.app",
 
+  /** Exactly as on the previous portfolio + résumé. No phone number anywhere public. */
   contact: {
-    // TODO: confirm each link before publishing. Leave "" to show a TODO pill.
-    email: "", // TODO: e.g. the address on the résumé
-    linkedin: "", // TODO: LinkedIn URL
-    behance: "", // TODO: Behance URL (résumé lists a Behance profile)
-    instagram: "", // TODO: Instagram URL (optional)
+    email: "raph@shortermerchant.com",
+    linkedin: "https://www.linkedin.com/in/akasm",
+    behance: "https://be.net/akasm",
+    unsplash: "https://unsplash.com/@akasm",
   },
 
-  /** TODO: drop the final ATS-friendly PDF into /public with this exact name. */
+  /** Master ATS résumé with the phone number removed. */
   resumePdf: "/Raphael-Merchant-Resume.pdf",
 
+  about: [
+    "Raphael Merchant is a photographer and art director based in Mississauga. The work leans cinematic and romantic — romanticized realism — where subjects are made monumental through scale, motion, and contrast. Luxury and athleticism against grit or open land. Hard daylight and soft fog. Motion blur as authorship. Not amenity photography — character first.",
+  ],
+  aboutFacts: [
+    { label: "Role", value: "Photographer & Art Director" },
+    { label: "Based", value: "Mississauga, ON" },
+    { label: "Status", value: "Available freelance & full-time" },
+    { label: "Focus", value: "Editorial · Automotive · Workwear · Landscape" },
+  ],
   /** Boarding-pass artwork fields (drawn in code, see lib/passArt.ts). */
   pass: {
-    airline: "MERCHANT AIR", // TODO: Raphael's own invented airline / brand line
+    airline: "MERCHANT AIR", // Placeholder airline line on the pass — Kam to confirm or rename.
     tagline: "PHOTO ART DIRECTION · CREATIVE PRODUCTION",
     flight: "RM2018", // initials + the year akasm was founded
     from: { code: "LHR", city: "LONDON" }, // Raphael's story: London → Toronto
@@ -100,41 +124,45 @@ export const site = {
     {
       id: "bricks",
       company: "Bricks",
-      chips: ["Br"], // TODO: Bricks logo
-      role: "Founder · Creative Director & Operations Lead",
+      chips: ["Br"],
+      role: "Production & Operations Lead",
       years: "2025 — Present",
-      gutter: "FOUNDER",
+      gutter: "OPS",
       current: true,
       description:
-        "AI-enabled creative operations for Canadian real-estate media: the brand, the visual standard and the system the work runs on — book, shoot, deliver.",
+        "A Canadian real-estate media and operations platform — book → pay → auto-assign → shoot → delivered. Run as sole operator, owning pricing, margin, resourcing and revenue decisions with full P&L accountability.",
       cases: [
-        { slug: "bricks", title: "Bricks", sub: "AI-enabled creative operations and a 24-hour photo delivery standard" },
+        { slug: "bricks", title: "Bricks", sub: "Listing media, end to end — book, shoot, deliver" },
       ],
     },
     {
       id: "akasm",
       company: "akasm",
-      chips: ["ak"], // TODO: akasm logo
-      role: "Founder · Art Director & Photographer",
+      chips: ["ak"],
+      role: "Director · Photographer · Filmmaker",
       years: "2018 — Present",
       gutter: "STUDIO",
       current: true,
-      description:
-        "Independent creative studio. Art-direct and produce brand campaigns end to end — casting, locations, crew, set and post — through QC and delivery.",
+      description: `Independent creative studio. Art-direct and produce brand campaigns and content systems — photo, film and social — from first concept through delivery. Clients include ${AKASM_CLIENTS.join(", ")}.`,
       cases: [
-        { slug: "akasm", title: "akasm — brand production", sub: "Campaigns and content systems for national clients, including Carhartt" },
-        { slug: "photo-art-direction", title: "Photo art direction", sub: "Stills, motion and aerial — directed on set, finished in post" },
+        { slug: "akasm", title: "akasm — brand production", sub: "Campaigns and content systems for national clients" },
+        { slug: "lovecorn", title: "LoveCorn", sub: "Creative direction — rebrand, packaging and campaign launch" },
+        { slug: "carhartt", title: "Carhartt WIP", sub: "Workwear editorial — industrial booth, orange jacket, camo and fleece" },
+        { slug: "benz", title: "Benz", sub: "Mercedes barn study — a classic Benz framed by riders in the hall" },
+        { slug: "landscape", title: "Landscape", sub: "Arid valleys, B&W highlands and train-framed mountains" },
+        { slug: "ai-horses", title: "AI Horses", sub: "Generated Western riders — dust, motion and hard blue sky" },
+        { slug: "photo-art-direction", title: "Selected frames", sub: "Standalone frames — automotive, workwear and open land" },
       ],
     },
     {
       id: "costar",
       company: "CoStar Group",
-      chips: ["Co"], // TODO: CoStar logo (factual "worked at" context only)
-      role: "Regional Art Director",
-      years: "2023 — 2025",
+      chips: ["Co"],
+      role: "Regional Visual Media Lead / Field Research Photographer",
+      years: "06/2023 — 06/2025",
       gutter: "GGH",
       description:
-        "Field and construction-monitoring photography across the Greater Golden Horseshoe. Held the visual standard for property media across 14,600+ listings.",
+        "All visual media deliverables for every CoStar subsidiary across the Greater Golden Horseshoe — 14,600+ listings, 20+ commercial properties a day for two years, and 1,687 drone flights. Part of the team that launched Apartments.com in Canada.",
       cases: [
         { slug: "costar", title: "CoStar — field media", sub: "Interiors, exteriors, aerials and virtual tours at regional scale" },
       ],
@@ -142,14 +170,14 @@ export const site = {
     {
       id: "studio-nostalgia",
       company: "Studio Nostalgia",
-      chips: ["SN"], // TODO: Studio Nostalgia logo
-      role: "Studio Lead · Creative Production Lead",
+      chips: ["SN"],
+      role: "Studio Lead",
       years: "2020 — 2023",
       gutter: "STUDIO",
       description:
-        "University and post-secondary graduation photography plus studio process management. Trained and led seasonal teams of up to 15 photographers.",
+        "Graduation and studio portrait photography at volume. Led the studio's creative output and trained and mentored seasonal teams of up to 15.",
       cases: [
-        { slug: "studio-nostalgia", title: "Studio Nostalgia", sub: "Graduation sessions, shoot systems and studio process" },
+        { slug: "studio-nostalgia", title: "Studio Nostalgia", sub: "Graduation portraits, soft studio light and process in frame" },
       ],
     },
     {
@@ -160,7 +188,7 @@ export const site = {
       years: "2018 — 2020",
       gutter: "BANKING",
       description:
-        "Supervised client account and credit casework in a high-volume centre — reviewing and verifying work against compliance standards.",
+        "Supervised live client account and credit casework in a high-volume centre — assigning, reviewing and verifying work against bank compliance standards.",
     },
     {
       id: "bmo",
@@ -180,154 +208,285 @@ export const site = {
       years: "2014 — 2015",
       gutter: "BROKERAGE",
       description: "Front-of-house at a real-estate brokerage in Mississauga.",
-      show: false, // TODO: on the résumé but not in the brief — set true to show
+      show: false, // On the résumé but not in the brief — set true to show.
     },
   ] satisfies Entry[] as Entry[],
 
   credentials: [
-    { label: "Transport Canada", value: "Advanced RPAS (drone) pilot certificate" },
-    { label: "York University", value: "Bachelor of Fine Arts (BFA)" },
+    { label: "Transport Canada", value: "Advanced RPAS (drone) pilot certificate — 1,687 flights · 1,580 km · 157 hours" },
+    { label: "York University", value: "Bachelor of Fine Arts (BFA), 2014–2018" },
+    { label: "TopPhotoAwards 2021", value: "Staged food photography honoured" },
+    { label: "Snappr 2019", value: "Named among Toronto's Best Photographers" },
   ],
 
-  /** Clients that may be named publicly. */
-  clients: ["Carhartt"],
-  /**
-   * TODO (do not render until confirmed): the master résumé also lists these
-   * akasm clients — Starbucks, Land Rover, Roots, Best Buy, Chipotle,
-   * Uber Eats, DoorDash. They are NOT shown anywhere on the site.
-   */
+  /** Clients that may be named publicly — akasm only. */
+  clients: AKASM_CLIENTS,
 
-  tools: ["Photoshop", "Lightroom", "Premiere Pro", "After Effects", "Illustrator", "InDesign", "Final Cut Pro", "Capture One", "Figma", "Higgsfield", "Notion"],
+  tools: ["Capture One", "Lightroom", "Photoshop", "Premiere Pro", "After Effects", "Illustrator", "InDesign", "Final Cut Pro", "Figma", "Higgsfield", "Frame.io", "Notion", "Asana", "Monday.com", "Airtable"],
 
-  /** Five personal photos for the "memories" fan. TODO: add files + captions. */
+  /** Five frames for the "memories" fan. */
   memories: [
-    { caption: "TODO: caption 1", src: "" },
-    { caption: "TODO: caption 2", src: "" },
-    { caption: "TODO: caption 3", src: "" },
-    { caption: "TODO: caption 4", src: "" },
-    { caption: "TODO: caption 5", src: "" },
+    { caption: "Mercedes coupe alone in a riding hall", src: w("gallery", "mercedes-barn-solo.jpg") },
+    { caption: "Cream Ferrari F40 on a residential street", src: w("gallery", "f40-street.jpg") },
+    { caption: "Trail runners moving through arid terrain", src: w("gallery", "trail-runners.jpg") },
+    { caption: "Lancia Integrale suspended in a desert study", src: w("gallery", "lancia-integrale.jpg") },
+    { caption: "Figure in a yellow tee in a green field", src: w("gallery", "garm-field.jpg") },
   ],
 
-  /** TODO: Raphael's own sign-off line (keep the travel metaphor). */
   outro: {
     line: "Wheels down. Thanks for boarding.",
     sub: "A few frames from between takeoff and landing.",
   },
 };
 
+const seq = (slug: string, files: [string, string][]): Figure[] => files.map(([f, caption]) => ({ src: w(slug, f), caption }));
+
 export const cases: CaseStudy[] = [
-  {
-    slug: "photo-art-direction",
-    title: "Photo art direction",
-    eyebrow: ["akasm", "Selected work"],
-    sub: "Stills, motion and aerial — concept to delivery.",
-    role: "Art Director & Photographer",
-    years: "2018 — Present",
-    body: [
-      "Lead photographer and director on set for stills, motion and aerial, with a Transport Canada Advanced RPAS certificate behind the aerial work.",
-      "TODO: 150–400 words — the brief, your role, the process and the outcome for a selected project.",
-    ],
-    facts: [
-      { label: "Disciplines", value: "Photo · Film · Aerial" },
-      { label: "Certification", value: "Advanced RPAS" },
-      { label: "Tools", value: "Capture One · Lightroom · Photoshop" },
-    ],
-    figures: [
-      { caption: "TODO: hero image", ratio: 3 / 2 },
-      { caption: "TODO: on-set image", ratio: 4 / 5 },
-      { caption: "TODO: final selects", ratio: 3 / 2 },
-    ],
-    compare: { caption: "TODO: before / after grade" },
-  },
   {
     slug: "costar",
     title: "CoStar Group",
-    eyebrow: ["Regional Art Director", "2023 — 2025"],
-    sub: "Field and construction-monitoring photography across the Greater Golden Horseshoe.",
-    role: "Regional Art Director — Field Research Photography & Drone Operations",
-    years: "2023 — 2025",
+    eyebrow: ["Regional Visual Media Lead", "06/2023 — 06/2025"],
+    sub: "Visual standards and architectural craft across the Greater Golden Horseshoe — how industrial and residential space reads on camera.",
+    role: "Regional Visual Media Lead / Field Research Photographer",
+    years: "06/2023 — 06/2025",
     body: [
-      "Managed visual deliverables for CoStar subsidiaries across the Greater Golden Horseshoe and set the standard for property media across 14,600+ listings — interiors, exteriors, aerials and virtual tours.",
-      "Operated as a one-person production unit — camera, gimbal, drone and virtual-tour capture — and fed field intelligence such as construction status back to research teams.",
-      "TODO: add selected images (with permission) and any additional context.",
+      "Managed all visual media deliverables for every CoStar subsidiary across the Greater Golden Horseshoe, CoStar's largest region in Canada — photography, drone and virtual tours — owning the quality, consistency and delivery of property media at regional scale.",
+      "Set and held the visual standard across 14,600+ listings, sustaining 20+ commercial properties a day for two years: interiors, exteriors, aerials and virtual tours shot in live retail and residential environments.",
+      "Part of the team that launched Apartments.com in Canada, owning the visual deliverables behind the launch; that media went on to feed national Apartments.com campaigns, including Super Bowl commercial productions.",
+      "Flew 1,687 drone missions (1,580 km, 157 hours) under a Transport Canada Advanced RPAS certificate, and worked as a one-person production unit — camera, gimbal, drone and virtual-tour capture — feeding new listings, construction status and tenant changes back to CoStar's research teams.",
     ],
     facts: [
       { label: "Listings", value: "14,600+" },
-      { label: "Region", value: "Greater Golden Horseshoe" },
-      { label: "Capture", value: "Photo · Drone · Virtual tour" },
+      { label: "Pace", value: "20+ commercial properties / day" },
+      { label: "Drone", value: "1,687 flights · 1,580 km · 157 h" },
+      { label: "Launch", value: "Apartments.com Canada" },
     ],
-    figures: [
-      { caption: "TODO: exterior / aerial", ratio: 3 / 2 },
-      { caption: "TODO: construction monitoring", ratio: 3 / 2 },
-      { caption: "TODO: interior", ratio: 4 / 5 },
-    ],
+    figures: seq("costar", [
+      ["01-cover.jpg", "Industrial loading — trailer at dock, CRE exterior"],
+      ["02.jpg", "Drone — curved-glass commercial exterior"],
+      ["03.jpg", "Office interior — empty commercial floor"],
+      ["04.jpg", "Winter aerial — multifamily asset overview"],
+      ["05.jpg", "Rooftop amenity — urban multifamily"],
+      ["06.jpg", "Courtyard at dusk"],
+      ["07.jpg", "Courtyard — alternate edit"],
+      ["09-riverbend-lobby.jpg", "Lobby amenity — orange seats, wood ceiling"],
+    ]),
   },
   {
     slug: "akasm",
     title: "akasm",
     eyebrow: ["Brand production", "2018 — Present"],
-    sub: "An independent studio for brand campaigns and content systems.",
-    role: "Founder · Art Director & Photographer",
+    sub: "An independent creative studio for brand campaigns and content systems.",
+    role: "Director · Photographer · Filmmaker",
     years: "2018 — Present",
     body: [
-      "Art-direct and produce brand campaigns and content systems — photo, film and social — from first concept through final delivery and approval.",
-      "Build shoots end to end: casting, locations, crew and vendor sourcing, schedules and shot lists, then direct on set and own post-production through QC.",
-      "TODO: write up the Carhartt project (brief, role, process, outcome) once approved for public use.",
+      "Art-direct and produce brand campaigns and content systems for national clients, covering photo, film and social, from first concept through final delivery and approval.",
+      "Build shoots end to end: casting, locations, crew and vendor sourcing, schedules and shot lists, then direct on set and own post-production through QC and delivery. Production budgets are owned line by line, with full financial accountability to clients on every engagement.",
+      "Lead photographer and director on set for stills, motion and aerial, with a Transport Canada Advanced RPAS certificate behind the aerial work — and an early adopter of AI-assisted production with Higgsfield and Adobe's generative tools where they raise the craft bar.",
+      "Recognition: staged food photography honoured at TopPhotoAwards (2021); named among Toronto's Best Photographers by Snappr (2019).",
     ],
     facts: [
-      { label: "Client", value: "Carhartt" },
-      { label: "Scope", value: "Photo · Film · Social" },
-      { label: "Role", value: "Art Director · Producer" },
+      { label: "Clients", value: AKASM_CLIENTS.join(" · ") },
+      { label: "Scope", value: "Photo · Film · Social · Aerial" },
     ],
     figures: [
-      { caption: "TODO: campaign hero", ratio: 3 / 2 },
-      { caption: "TODO: behind the scenes", ratio: 4 / 5 },
-      { caption: "TODO: content system", ratio: 1 },
+      { src: w("lovecorn", "01-cover.jpg"), caption: "LoveCorn — campaign key visual" },
+      { src: w("carhartt", "01-cover.jpg"), caption: "Carhartt WIP — workwear editorial" },
+      { src: w("benz", "01-cover.jpg"), caption: "Benz — Mercedes barn study" },
     ],
+  },
+  {
+    slug: "lovecorn",
+    title: "LoveCorn",
+    eyebrow: ["akasm", "Creative direction"],
+    sub: "Rebrand and campaign launch — brand world, packaging and campaign stills for a snack brand that needed character over polish.",
+    role: "Creative Director",
+    body: [
+      "End-to-end LoveCorn campaign: brand strategy, custom CGI corn assets, a bold colour system, packaging, social, retail and launch.",
+    ],
+    facts: [
+      { label: "Client", value: "LoveCorn" },
+      { label: "Scope", value: "Brand · Packaging · Campaign · Social · Retail" },
+    ],
+    figures: seq("lovecorn", [
+      ["01-cover.jpg", "Four LoveCorn bags floating over pink, yellow, cyan and burgundy bands"],
+      ["02.jpg", "Hand holding a blue LoveCorn bag against cyan with scattered corn"],
+      ["03.jpg", "Red LoveCorn pack with orange corn pieces on yellow"],
+      ["04.jpg", "Two LoveCorn packs on a yellow skateboard, sneaker entering frame"],
+      ["05.jpg", "Four packs floating above an outstretched hand on light blue"],
+    ]),
+  },
+  {
+    slug: "carhartt",
+    title: "Carhartt WIP",
+    eyebrow: ["akasm", "Editorial"],
+    sub: "Workwear editorial — industrial booth, orange jacket, camo and fleece.",
+    role: "Photographer & Art Director",
+    body: [
+      "A workwear editorial staged in an industrial paint booth: hard light, grate floors and full-length silhouettes, with close back details on camo, fleece and quilting.",
+    ],
+    facts: [
+      { label: "Brand", value: "Carhartt WIP" },
+      { label: "Focus", value: "Workwear · Editorial" },
+    ],
+    figures: seq("carhartt", [
+      ["01-cover.jpg", "Full-length orange Carhartt jacket in an industrial paint booth"],
+      ["02.jpg", "Camo overalls back detail with plaid flannel"],
+      ["03.jpg", "Two models seated and standing in the paint booth"],
+      ["04.jpg", "High-pile fleece jacket back detail"],
+      ["05.jpg", "Denim jacket over an orange layer against light panels"],
+      ["06.jpg", "Spotlight portrait with quilted vest on a grate floor"],
+    ]),
+  },
+  {
+    slug: "benz",
+    title: "Benz",
+    eyebrow: ["akasm", "Automotive"],
+    sub: "Mercedes barn study — a classic Benz framed by riders in the hall.",
+    role: "Photographer & Art Director",
+    body: [
+      "Luxury against grit: a classic Mercedes coupe set inside a working riding hall, with riders and horses in motion around it.",
+    ],
+    facts: [{ label: "Focus", value: "Automotive · Equestrian" }],
+    figures: seq("benz", [
+      ["01-cover.jpg", "Benz between riders in a riding hall"],
+      ["02.jpg", "Mercedes coupe three-quarter in the arena"],
+      ["03.jpg", "Coupe with equestrian rider in the barn"],
+      ["04.jpg", "Mercedes coupe alone in the riding hall"],
+      ["05.jpg", "Moody coupe study under barn lights"],
+      ["06.jpg", "Barn doorway in sun"],
+      ["07.jpg", "Equestrian aisle portrait"],
+      ["08.jpg", "Horse in motion through the barn"],
+      ["09.jpg", "Two riders framing the narrative"],
+    ]),
+  },
+  {
+    slug: "landscape",
+    title: "Landscape",
+    eyebrow: ["akasm", "Landscape"],
+    sub: "Arid river valleys, highland lakes, and train-framed mountains.",
+    role: "Photographer",
+    body: [
+      "Open land at scale — arid valleys in colour, highlands in black and white, and mountains framed through the rails.",
+    ],
+    facts: [{ label: "Focus", value: "Landscape · Black & white" }],
+    figures: seq("landscape", [
+      ["01-cover.jpg", "River valley with rails and arid mountains"],
+      ["02.jpg", "Turquoise river winding through a canyon"],
+      ["03.jpg", "Lake and arid mountain range"],
+      ["04.jpg", "Overcast valley lake from a high ridge"],
+      ["05.jpg", "B&W mountain reflected in a still tarn"],
+      ["06.jpg", "B&W highland lake in a valley"],
+      ["07.jpg", "B&W rocky mountain face"],
+      ["08.jpg", "B&W windswept tree on a rocky outcrop"],
+      ["09.jpg", "B&W pony in moorland grass"],
+      ["10.jpg", "B&W lake valley with shoreline track"],
+      ["11.jpg", "Mountains framed through a train coupler"],
+    ]),
+  },
+  {
+    slug: "ai-horses",
+    title: "AI Horses",
+    eyebrow: ["akasm", "AI-generated"],
+    sub: "Generated Western and equestrian riders — dust, motion, and hard blue sky.",
+    role: "Art Director",
+    body: [
+      "A generated series, not photographed: Western riders and horses in motion, art-directed for dust, hard daylight and a deep blue sky.",
+    ],
+    facts: [{ label: "Medium", value: "AI-generated imagery" }],
+    figures: seq("ai-horses", [
+      ["01-cover.jpg", "Western rider on a bucking pinto against blue sky (AI-generated)"],
+      ["02.jpg", "Western rider on a dark horse (AI-generated)"],
+      ["03.jpg", "White horse rearing with rider (AI-generated)"],
+      ["04.jpg", "Chestnut horse moving through dust (AI-generated)"],
+      ["05.jpg", "Dark horse bucking mid-air (AI-generated)"],
+      ["06.jpg", "Horse and rider leaping over a ridge (AI-generated)"],
+      ["07.jpg", "Western rider and horse in motion (AI-generated)"],
+      ["08.jpg", "Western rider on a rearing horse (AI-generated)"],
+      ["09.jpg", "Rider above a bucking horse in dust (AI-generated)"],
+      ["10.jpg", "Western rider on a dark horse against blue sky (AI-generated)"],
+    ]),
+  },
+  {
+    slug: "photo-art-direction",
+    title: "Selected frames",
+    eyebrow: ["akasm", "Gallery"],
+    sub: "Standalone frames — automotive, workwear and open land.",
+    role: "Photographer & Art Director",
+    body: [
+      "Single frames that live outside the titled sequences: cars in hangars and on quiet streets, workwear in open fields, runners on arid trails.",
+    ],
+    facts: [{ label: "Focus", value: "Editorial · Automotive · Workwear · Landscape" }],
+    figures: seq("gallery", [
+      ["mercedes-barn-solo.jpg", "Mercedes coupe alone in a riding hall"],
+      ["f40-street.jpg", "Cream Ferrari F40 on a residential street"],
+      ["f40-rear.jpg", "Ferrari F40 rear three-quarter"],
+      ["f40-detail.jpg", "Ferrari wing and badge detail"],
+      ["lancia-integrale.jpg", "Lancia Integrale suspended in a desert study"],
+      ["mercedes-race.jpg", "Mercedes C11 race car in an industrial hangar"],
+      ["warehouse-race.jpg", "Prototype race cars in a dark warehouse"],
+      ["trail-runners.jpg", "Trail runners moving through arid terrain"],
+      ["arid-rails-portrait.jpg", "Arid landscape framed by rails"],
+      ["terrain-wind-02.jpg", "Figure in workwear against windswept terrain"],
+      ["terrain-wind-03.jpg", "Motion-blur walk through a golden field"],
+      ["clothing-cargo-field.jpg", "Oversized cargo pants in a grassy field"],
+      ["garm-field.jpg", "Figure in a yellow tee and sweatpants in a green field"],
+    ]),
   },
   {
     slug: "studio-nostalgia",
     title: "Studio Nostalgia",
     eyebrow: ["Studio Lead", "2020 — 2023"],
-    sub: "University and post-secondary graduation photography, plus studio process management.",
-    role: "Studio Lead · Creative Production Lead",
+    sub: "Graduation and studio portraits — memory-forward people, soft studio light, and process in frame.",
+    role: "Studio Lead",
     years: "2020 — 2023",
     body: [
-      "Led the studio's creative output across graduation programmes — session planning, shoot direction, post-production and delivery.",
-      "Trained and mentored seasonal photographers in teams of up to 15 at peak, and built the shoot systems, staffing plans and quality bar the studio ran on.",
-      "TODO: add images (with permission) and a short note on the studio process you built.",
+      "Led the studio's creative output across seasonal and graduation programmes — session planning, shoot direction, post-production and delivery.",
+      "Trained and mentored seasonal teams of up to 15 at peak on craft, shoot workflows and client service, and built the shoot systems, staffing plans and quality bar the studio ran on through peak season.",
+      "Ran studio operations day to day — session flow, equipment readiness and a consistent client experience from booking to delivery.",
     ],
     facts: [
-      { label: "Team", value: "Up to 15 photographers" },
-      { label: "Focus", value: "Graduation photography" },
-      { label: "Ops", value: "Studio process management" },
+      { label: "Team", value: "Seasonal teams of up to 15" },
+      { label: "Focus", value: "Graduation & studio portraits" },
+      { label: "Ops", value: "Shoot systems · Staffing · QC" },
     ],
-    figures: [
-      { caption: "TODO: studio set-up", ratio: 3 / 2 },
-      { caption: "TODO: graduation portrait", ratio: 4 / 5 },
-    ],
+    figures: seq("studio-nostalgia", [
+      ["01-cover.jpg", "Behind-the-scenes laptop review during a portrait session"],
+      ["02.jpg", "Studio stool portrait with reflector edge"],
+      ["03.jpg", "Studio portrait"],
+      ["04.jpg", "Graduation portrait with rose and visible reflector"],
+      ["05.jpg", "Studio portrait"],
+      ["06.jpg", "Portrait detail"],
+      ["07.jpg", "Giving direction — softbox and tethered review in frame"],
+      ["08.jpg", "Wide studio process — subject, backdrop and set signage"],
+      ["09.jpg", "Process frame"],
+      ["10.jpg", "Studio portrait"],
+    ]),
   },
   {
     slug: "bricks",
     title: "Bricks",
-    eyebrow: ["Founder", "2025 — Present"],
-    sub: "AI-enabled creative operations for real-estate media.",
-    role: "Founder · Creative Director & Operations Lead",
+    eyebrow: ["Production & Operations Lead", "2025 — Present"],
+    sub: "Listing media, end to end — book, shoot, deliver.",
+    role: "Production & Operations Lead",
     years: "2025 — Present",
     body: [
-      "Bricks runs real-estate media on one flow — book, pay, auto-assign, shoot, delivered — replacing the patchwork of texts, Drive links and invoices.",
-      "Defined the brand from zero and direct a distributed network of photographers and editors to a 24-hour photo delivery standard.",
-      "TODO: add product screens and a reel (hover-play tiles work well here).",
+      "Bricks is a Canadian real-estate media and operations platform that books, assigns, shoots and delivers MLS-ready listing media — HDR photos, licensed drone and floor plans — in one pay-to-lock flow: book → pay → auto-assign → shoot → delivered.",
+      "The goal: kill quote ping-pong, surprise travel fees and scattered delivery. One browser path, so an agent sees price and clock before they pay, then gets listing-ready media without chasing handoffs. Stills stay MLS-safe — real windows, no invented sky or dusk by default — and everything lands in one listing instead of a loose folder.",
+      "Run as sole operator, owning every pricing, margin, resourcing and revenue decision with full P&L accountability — built on two years as CoStar's Regional Visual Media Lead across 14,600+ listings (career experience, not Bricks booking volume).",
     ],
     facts: [
-      { label: "Role", value: "Founder" },
-      { label: "Standard", value: "24-hour photo delivery" },
-      { label: "Focus", value: "Creative operations" },
+      { label: "Loop", value: "Book → Pay → Assign → Shoot → Deliver" },
+      { label: "Turnaround", value: "24–48h target" },
+      { label: "Market", value: "Canadian agents & teams" },
     ],
-    figures: [
-      { caption: "TODO: Bricks OS screen", ratio: 16 / 10 },
-      { caption: "TODO: listing media", ratio: 3 / 2 },
-    ],
+    links: [{ label: "brxs.ca", href: "https://www.brxs.ca" }],
+    figures: seq("bricks", [
+      ["01-cover.jpg", "Book a shoot in the browser — price and clock before you pay"],
+      ["03.jpg", "Delivery lands in one shareable listing, not a loose folder"],
+      ["04.jpg", "MLS, web and print exports in one place"],
+      ["07-listing-craft.jpg", "MLS-safe stills — real windows, no invented sky by default"],
+    ]),
   },
 ];
 

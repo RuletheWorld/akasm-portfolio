@@ -293,3 +293,9 @@ html.is-covered .gate { display: block; position: fixed; inset: 0; z-index: 50; 
 .cs-nav-btn:hover { background: rgb(255 255 255 / .14); }
 .cs-nav-btn small { font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; opacity: .7; }
 @media (max-width: 520px) { .cs-nav-wide { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; } }
+
+/* Case thumbnails inside the fan + About facts */
+.fan-card { overflow: hidden; }
+.fan-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.about-facts { margin: 14px 0 22px; }
+.mem img { display: block; }

@@ -34,8 +34,8 @@ export default function Footer() {
       <nav className="foot" aria-label="Footer">
         <button type="button" className="foot-link" onClick={returnToGate}><span>Return to Gate</span></button>
         <a className="foot-link" href={site.resumePdf} download><span>Résumé</span></a>
-        {linkedin ? <a className="foot-link" href={linkedin} target="_blank" rel="noreferrer"><span>LinkedIn</span></a> : <span className="foot-link is-todo" title="TODO: add LinkedIn URL in content/site.ts"><span>LinkedIn</span></span>}
-        {email ? <a className="foot-link" href={`mailto:${email}`}><span>Email</span></a> : <span className="foot-link is-todo" title="TODO: add email in content/site.ts"><span>Email</span></span>}
+        <a className="foot-link" href={linkedin} target="_blank" rel="noreferrer"><span>LinkedIn</span></a>
+        <a className="foot-link" href={`mailto:${email}`}><span>Email</span></a>
         <span className="wide-only"><SoundToggle /></span>
       </nav>
     </>

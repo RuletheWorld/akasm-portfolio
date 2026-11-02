@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { caseBySlug, cases } from "@/content/site";
+import { caseBySlug, cases, type Figure as Fig } from "@/content/site";
+import { dims } from "@/content/media";
 import CsReveal from "@/components/case/CsReveal";
 import Compare from "@/components/case/Compare";
 import { ProgressiveBlur } from "@/components/home/Footer";
@@ -14,7 +16,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const c = caseBySlug(slug);
-  return c ? { title: c.title, description: c.sub } : {};
+  return c ? { title: c.title, description: c.sub, openGraph: c.figures[0] ? { images: [c.figures[0].src] } : undefined } : {};
 }
 
 export default async function CasePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -35,17 +37,22 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
         </header>
         <dl className="cs-facts cs-reveal">
           <div><dt>Role</dt><dd>{c.role}</dd></div>
-          <div><dt>Years</dt><dd>{c.years}</dd></div>
+          {c.years && <div><dt>Years</dt><dd>{c.years}</dd></div>}
           {c.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
         </dl>
-        {c.figures[0] && <Figure f={c.figures[0]} n={1} />}
+        {c.figures[0] && <Figure f={c.figures[0]} priority />}
         {c.body.map((p, k) => (
-          <p key={k} className={`cs-p cs-reveal${p.startsWith("TODO") ? " is-todo" : ""}`}>
+          <p key={k} className="cs-p cs-reveal">
             {k === 0 && <span className="cs-gutter" aria-hidden>BRIEF</span>}
             {p}
           </p>
         ))}
-        {c.figures.slice(1).map((f, k) => <Figure key={k} f={f} n={k + 2} />)}
+        {c.links && c.links.length > 0 && (
+          <p className="cs-p cs-reveal">
+            {c.links.map((l, k) => <a key={l.href} href={l.href} target="_blank" rel="noreferrer">{k > 0 && " · "}{l.label} ↗</a>)}
+          </p>
+        )}
+        {c.figures.slice(1).map((f) => <Figure key={f.src} f={f} />)}
         {c.compare && <Compare {...c.compare} />}
       </div>
       <ProgressiveBlur />
@@ -58,11 +65,12 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
   );
 }
 
-function Figure({ f, n }: { f: { caption: string; ratio: number; src?: string }; n: number }) {
+function Figure({ f, priority }: { f: Fig; priority?: boolean }) {
+  const [w, h] = dims(f.src);
   return (
     <figure className="cs-fig cs-reveal">
-      <div className="cs-frame" style={{ aspectRatio: String(f.ratio) }}>
-        {f.src ? <img src={f.src} alt={f.caption} /> : <span className="ph-label">FIG {String(n).padStart(2, "0")} · IMAGE PLACEHOLDER</span>}
+      <div className="cs-frame" style={{ aspectRatio: `${w} / ${h}` }}>
+        <Image src={f.src} alt={f.caption} width={w} height={h} sizes="(max-width: 760px) 100vw, 720px" priority={priority} />
       </div>
       <figcaption>{f.caption}</figcaption>
     </figure>

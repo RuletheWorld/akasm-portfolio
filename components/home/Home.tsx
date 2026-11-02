@@ -6,7 +6,7 @@ import Memories from "./Memories";
 import Footer from "./Footer";
 
 function ContactPill({ label, href }: { label: string; href: string }) {
-  if (!href) return <span className="pill is-todo" title={`TODO: add ${label} in content/site.ts`}>{label} · TODO</span>;
+  if (!href) return null;
   return <a className="pill" href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">{label}</a>;
 }
 
@@ -28,10 +28,10 @@ export default function Home() {
 
         <section className="folio-about reveal" style={{ ["--reveal-delay" as string]: "200ms" }} aria-label="About">
           <h2 className="mono-label">About</h2>
-          {/* TODO: Raphael to write a short About paragraph. */}
-          <p className="folio-p">
-            TODO: a short paragraph in Raphael&apos;s voice — what he shoots, how he runs a set, and what he wants to build next.
-          </p>
+          {site.about.map((p, k) => <p key={k} className="folio-p">{p}</p>)}
+          <ul className="tl-creds about-facts">
+            {site.aboutFacts.map((f) => <li key={f.label}><span className="mono-label">{f.label}</span>{f.value}</li>)}
+          </ul>
           <Memories />
         </section>
 
@@ -42,7 +42,7 @@ export default function Home() {
             <ContactPill label="Email" href={c.email ? `mailto:${c.email}` : ""} />
             <ContactPill label="LinkedIn" href={c.linkedin} />
             <ContactPill label="Behance" href={c.behance} />
-            <ContactPill label="Instagram" href={c.instagram} />
+            <ContactPill label="Unsplash" href={c.unsplash} />
           </div>
         </section>
 

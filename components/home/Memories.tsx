@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useState } from "react";
 import { site } from "@/content/site";
 
@@ -24,7 +25,7 @@ export default function Memories() {
             onBlur={() => setActive(null)}
             aria-label={m.caption}
           >
-            {m.src ? <img src={m.src} alt="" /> : <span className="mem-ph">{String(i + 1).padStart(2, "0")}</span>}
+            {m.src ? <Image src={m.src} alt="" width={152} height={196} sizes="152px" /> : <span className="mem-ph">{String(i + 1).padStart(2, "0")}</span>}
             {on && <span className="mem-tip">{m.caption}</span>}
           </button>
         );

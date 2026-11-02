@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { site, type Entry } from "@/content/site";
+import { caseBySlug, site, type Entry } from "@/content/site";
 import FlightPath from "./FlightPath";
 
 const TIMELINE_ID = "flight-plan";
@@ -15,11 +16,16 @@ function Chips({ chips }: { chips: string[] }) {
 }
 
 function CaseRow({ slug, title, sub }: { slug: string; title: string; sub: string }) {
+  const thumbs = (caseBySlug(slug)?.figures ?? []).slice(0, 3);
   return (
     <Link href={`/work/${slug}`} className="case-row">
       <span className="tl-dot tl-dot-case" />
       <span className="fan" aria-hidden>
-        <span className="fan-card f1" /><span className="fan-card f2" /><span className="fan-card f3" />
+        {["f1", "f2", "f3"].map((k, n) => (
+          <span key={k} className={`fan-card ${k}`}>
+            {thumbs[n] && <Image src={thumbs[n].src} alt="" width={52} height={72} sizes="52px" />}
+          </span>
+        ))}
       </span>
       <span className="case-copy">
         <span className="case-title">{title}</span>
@@ -30,7 +36,7 @@ function CaseRow({ slug, title, sub }: { slug: string; title: string; sub: strin
 }
 
 function EntryView({ e, i }: { e: Entry; i: number }) {
-  const [from] = e.years.split("—").map((s) => s.trim());
+  const from = e.years.split("—")[0].trim().slice(-4);
   return (
     <article className="tl-entry" style={{ ["--i" as string]: i }}>
       <Chips chips={e.chips} />
