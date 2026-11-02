@@ -17,6 +17,6 @@ export const BOOT_SCRIPT = `(function(){try{
 var d=document.documentElement,q=location.search;
 if(localStorage.getItem('${KEY_DARK}')==='1')d.dataset.theme='dark';
 var home=location.pathname==='/'||location.pathname==='';
-var skip=/[?&]skip(=|&|$)/.test(q);
-if(home&&!skip&&localStorage.getItem('${KEY_UNLOCKED}')!=='1')d.classList.add('is-covered');
+var skip=/[?&]skip(=|&|$)/.test(q),force=/[?&]gate(=|&|$)/.test(q);
+if(home&&!skip&&(force||localStorage.getItem('${KEY_UNLOCKED}')!=='1'))d.classList.add('is-covered');
 }catch(e){}})();`;

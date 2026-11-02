@@ -5,9 +5,8 @@
  */
 import * as THREE from "three";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Environment, Lightformer, RoundedBox } from "@react-three/drei";
+import { Environment, Lightformer, RoundedBox } from "@react-three/drei";
 import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from "@react-three/rapier";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef } from "react";
 import { CARD_H, CARD_R, CARD_T, CARD_W, OM, READER_D, READER_H, READER_TILT, READER_W, SLOT_HALF, SLOT_TOP, pxPerUnit, rig, zOnTilt } from "./constants";
@@ -99,7 +98,7 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     opacity: 0,
     inSlot: false,
     granted: false,
-    minX: 0, maxX: 0,
+    swipe: [] as { t: number; x: number }[],
     prevY: OM.hoverY, prevX: 0,
     rx: 0, z: 0, curRz: 0,
     grabLocal: new THREE.Vector3(),
@@ -180,7 +179,11 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     s.grabLocal.z = 0;
     s.prevX = t.x; s.prevY = t.y;
     s.fx.x = t.x; s.fy.x = t.y; s.fx.v = s.vel.x; s.fy.v = s.vel.y;
-    if (s.mode !== "release") s.inSlot = false;
+    // picked up while seated in the slot (resting there after a release or a fall): keep it seated
+    const seated = Math.abs(t.x) < SLOT_HALF && t.y < SLOT_TOP + 0.12 && t.y > SLOT_TOP - CARD_H * 0.6;
+    s.inSlot = seated;
+    if (seated) { s.prevY = SLOT_TOP; setStatus("near"); }
+    s.swipe = seated ? [{ t: performance.now(), x: t.x }] : [];
     s.mode = "drag";
     document.body.style.cursor = "grabbing";
   };
@@ -192,6 +195,7 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     if (s.inSlot) {
       s.mode = "release";
       play("press");
+      if (!s.granted && statusRef.current === "near") setStatus("idle");
     } else {
       b.setBodyType(RB_DYNAMIC, true);
       const rnd = () => Math.random() * 2 - 1;
@@ -248,14 +252,14 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
               s.inSlot = true;
               play("press");
               if (!s.granted) setStatus("near");
-              s.minX = s.maxX = p.x;
+              s.swipe = [{ t: performance.now(), x: p.x }];
             }
           } else {
             p.x = Math.sign(p.x || 1) * SLOT_HALF; // came from the side: pushed out
           }
         } else if (s.inSlot) {
           s.inSlot = false;
-          if (s.maxX - s.minX < OM.traverseSpan && !s.granted) {
+          if (!s.granted) {
             const now = performance.now();
             if (now - s.lastErr > 600) { s.lastErr = now; play("error"); setStatus("error"); }
             else if (statusRef.current === "near") setStatus("idle");
@@ -269,8 +273,13 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
           ty -= over * 0.36;
           s.rx = damp(s.rx, READER_TILT, 10, dt);
           s.z = damp(s.z, zOnTilt(ty), 12, dt);
-          s.minX = Math.min(s.minX, p.x); s.maxX = Math.max(s.maxX, p.x);
-          if (s.maxX - s.minX > OM.traverseSpan && !s.granted) { s.granted = true; onSwiped(); }
+          // a swipe = the pass travels traverseSpan along the slot within swipeWindowMs (distance + speed)
+          const now = performance.now();
+          s.swipe.push({ t: now, x: p.x });
+          while (s.swipe.length > 1 && now - s.swipe[0].t > OM.swipeWindowMs) s.swipe.shift();
+          let lo = Infinity, hi = -Infinity;
+          for (const q of s.swipe) { lo = Math.min(lo, q.x); hi = Math.max(hi, q.x); }
+          if (hi - lo > OM.traverseSpan && !s.granted) { s.granted = true; onSwiped(); }
         } else {
           const dx = p.x - s.prevX;
           rz = clamp(s.grabLocal.x * 0.28, -0.35, 0.35) + clamp(-dx * 4, -0.3, 0.3);
@@ -279,10 +288,8 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
         }
         s.curRz = damp(s.curRz, rz, s.inSlot ? 8 : 4.5, dt);
         s.q.slerp(quat(s.rx, 0, s.curRz), 1 - Math.exp(-16 * dt));
-        // weighted follow: stiff in the slot (precise swipe), looser in the air (momentum, overshoot)
-        const k = s.inSlot ? 900 : 520, c = s.inSlot ? 60 : 40;
-        spring(s.fx, p.x, k, c, dt);
-        spring(s.fy, ty, k, c, dt);
+        // direct kinematic follow (as on mikes.cv): the pass sits exactly under the pointer
+        s.fx.x = p.x; s.fy.x = ty;
         b.setNextKinematicTranslation({ x: s.fx.x, y: s.fy.x, z: s.z });
         b.setNextKinematicRotation(s.q);
         s.prevY = p.y; s.prevX = p.x;
@@ -305,7 +312,9 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
         const sp = Math.hypot(v.x, v.y, v.z);
         s.stillMs = sp < 0.05 ? s.stillMs + dt * 1000 : 0;
         const offscreen = pos.y < rig.camY - rig.visibleH / 2 - 2 || Math.abs(pos.x) > rig.visibleH * 2;
-        if (offscreen || s.stillMs > 1200) {
+        // a pass that comes to rest in the slot stays there, ready to be swiped (as on mikes.cv)
+        const inSlotZone = Math.abs(pos.x) < CARD_W / 2 + 0.1 && Math.abs(pos.y - SLOT_TOP) < 0.35;
+        if (offscreen || (s.stillMs > 1200 && !inSlotZone)) {
           s.mode = "hidden";
           s.opacity = 0;
           setTimeout(resetToHover, OM.respawnMs);
@@ -402,9 +411,11 @@ function Reader({ status, cardY }: { status: LcdStatus; cardY: React.MutableRefO
       const m = spotMesh.current.material as THREE.MeshBasicMaterial;
       const near = 1 - smoothstep(1.4, 2.6, Math.abs(c.x));
       m.opacity = (0.46 + (0.07 - 0.46) * lift) * near * c.visible;
-      const sc = 0.75 + lift * 0.6;
+      // keep the contact shadow on the reader's top face: never wider than the reader, never past its ends
+      const sc = Math.min(0.75 + lift * 0.6, (READER_W - 0.12) / 3.2);
+      const room = (READER_W - 0.12 - 3.2 * sc) / 2;
       spotMesh.current.scale.set(sc, 0.16 + lift * 0.4, 1);
-      spotMesh.current.position.x = c.x * 0.9;
+      spotMesh.current.position.x = clamp(c.x * 0.9, -room, room);
     }
   });
 
@@ -501,14 +512,10 @@ function World(p: SceneProps & { textures: { front: THREE.Texture; back: THREE.T
       <color attach="background" args={[p.bg]} />
       <CameraRig />
       <StudioLights />
-      <Physics gravity={[0, -18, 0]} timeStep={1 / 60}>
+      <Physics gravity={[0, -18, 0]} timeStep="vary">
         <Reader status={p.status} cardY={cardY} />
         <PassCard textures={p.textures} statusRef={statusRef} setStatus={p.setStatus} onSwiped={p.onSwiped} cardY={cardY} />
       </Physics>
-      <ContactShadows position={[0, OM.readerY - READER_H / 2 - 0.08, 0]} opacity={0.32} scale={7} blur={2.6} far={1.2} resolution={256} color="#3a3020" />
-      <EffectComposer multisampling={4}>
-        <Bloom intensity={0.15} luminanceThreshold={1} luminanceSmoothing={0.05} mipmapBlur />
-      </EffectComposer>
     </>
   );
 }
@@ -538,7 +545,7 @@ export default function Scene(p: SceneProps) {
     <Canvas
       dpr={[1, 1.5]}
       camera={{ position: [0, 0, 13], fov: 25, near: 0.1, far: 100 }}
-      gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}
+      gl={{ alpha: false, antialias: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0, touchAction: "none" }}
       aria-hidden
     >

@@ -91,16 +91,13 @@ export default function Gate() {
     return () => clearTimeout(t);
   }, [mode, leaveSplash]);
 
-  // keyboard: Enter boards from anywhere on the gate, Escape skips
+  // keyboard: Escape skips to the CV. Nothing but a real swipe grants boarding.
   useEffect(() => {
     if (phase !== "pass") return;
-    const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") skip();
-      if (e.key === "Enter" && (document.activeElement === document.body || (document.activeElement as HTMLElement)?.dataset.pass)) grant();
-    };
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") skip(); };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
-  }, [phase, grant, skip]);
+  }, [phase, skip]);
 
   if (phase === "site") return null;
 
@@ -113,16 +110,13 @@ export default function Gate() {
           <GLBoundary fallback={null} onFail={() => setMode("2d")}>
             <Scene status={status} setStatus={setStatus} onSwiped={grant} onReady={leaveSplash} bg={bg} />
           </GLBoundary>
-          <button type="button" className="pass-focus" data-pass="1" onClick={grant} aria-label="Boarding pass. Press Enter to board.">
-            <span className="sr-only">Board</span>
-          </button>
         </div>
       )}
-      {mode === "2d" && <StaticPass status={status} onReady={leaveSplash} onBoard={() => { setStatus("near"); play("press"); setTimeout(grant, 650); }} />}
+      {mode === "2d" && <StaticPass status={status} setStatus={setStatus} onReady={leaveSplash} onSwiped={grant} />}
       {phase === "pass" && (
         <>
           <p className={`pass-hint${status === "granted" ? " is-granted" : ""}`} aria-live="polite">{hint}</p>
-          <p className="pass-help">{mode === "2d" ? "Press Board · or press Enter" : "Drag the pass into the reader and swipe it through · or press Enter"}</p>
+          <p className="pass-help">{mode === "2d" ? "Drag the pass sideways through the reader · Esc to skip" : "Drag the pass into the reader and swipe it through · Esc to skip"}</p>
         </>
       )}
       <SkipLink onSkip={skip} />
