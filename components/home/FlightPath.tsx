@@ -23,6 +23,7 @@ export default function FlightPath({ timelineId }: { timelineId: string }) {
     let cur = 0, target = 0, raf = 0;
 
     const measure = () => {
+      if (!svg.current || !dotsPath.current || !lit.current) return; // unmounted (e.g. list → map swap)
       const centred = getComputedStyle(el).getPropertyValue("--plan-centre").trim() === "1";
       if (centred) {
         const col = timeline.getBoundingClientRect();

@@ -40,6 +40,8 @@ export type Entry = {
   current?: boolean;
   description: string;
   cases?: CaseRowRef[];
+  /** 1–2 canon proof points shown on the route card. */
+  proof: string[];
   /** Set false to keep an entry in the file but off the page. */
   show?: boolean;
 };
@@ -119,21 +121,52 @@ export const site = {
       "Carry-on: camera body, gimbal, drone and an Advanced RPAS certificate. Boarding closes when the final frame ships.",
   },
 
-  /** Flight-plan timeline, top to bottom. */
+  /**
+   * The CV route, in drive order (oldest → newest). The map on /cv drives these
+   * stops in this order after "Arrivals" (the LHR → YYZ landing on the pass).
+   * `proof` = the 1–2 lines shown on each map card (canon résumé facts only).
+   */
   timeline: [
     {
-      id: "bricks",
-      company: "Bricks",
-      chips: ["Br"],
-      role: "Production & Operations Lead",
-      years: "2025 — Present",
-      gutter: "OPS",
-      current: true,
-      description:
-        "A Canadian real-estate media and operations platform — book → pay → auto-assign → shoot → delivered. Run as sole operator, owning pricing, margin, resourcing and revenue decisions with full P&L accountability.",
-      cases: [
-        { slug: "bricks", title: "Bricks", sub: "Listing media, end to end — book, shoot, deliver" },
+      id: "royal-lepage",
+      company: "Royal LePage Signature",
+      chips: ["RL"],
+      role: "Administrative Assistant / Receptionist",
+      years: "2014 — 2015",
+      gutter: "BROKERAGE",
+      proof: [
+        "Front-of-house at a high-volume real-estate brokerage — first point of contact for clients, agents and walk-ins.",
+        "Supported deal administration end to end: documents, deadlines, and agents, clients and legal offices.",
       ],
+      description: "Front-of-house at a real-estate brokerage in Mississauga.",
+    },
+    {
+      id: "bmo",
+      company: "BMO",
+      chips: ["BMO"],
+      role: "General Banking Specialist",
+      years: "2016 — 2018",
+      gutter: "BANKING",
+      proof: [
+        "Front-line client service in a high-volume banking call centre, resolving inquiries at first point of contact.",
+        "Ran multiple banking systems at once on live accounts, holding accuracy and compliance on every call.",
+      ],
+      description:
+        "Front-line client service across multiple banking systems, resolving account inquiries at first point of contact.",
+    },
+    {
+      id: "rbc",
+      company: "RBC",
+      chips: ["RBC"],
+      role: "Credit Supervisor",
+      years: "2018 — 2020",
+      gutter: "BANKING",
+      proof: [
+        "Caught a $50,000-vs-$5,000 keying error in case review before it posted.",
+        "Supervised and verified live credit casework against bank compliance standards.",
+      ],
+      description:
+        "Supervised live client account and credit casework in a high-volume centre — assigning, reviewing and verifying work against bank compliance standards.",
     },
     {
       id: "akasm",
@@ -143,6 +176,10 @@ export const site = {
       years: "2018 — Present",
       gutter: "STUDIO",
       current: true,
+      proof: [
+        "Brand campaigns for Starbucks, Chipotle, Best Buy, Roots, Uber Eats, DoorDash, Storage Mart, LoveCorn and Carhartt.",
+        "Photo, film and aerial — casting, crew, set and post, from first concept to sign-off.",
+      ],
       description: `Independent creative studio. Art-direct and produce brand campaigns and content systems — photo, film and social — from first concept through delivery. Clients include ${AKASM_CLIENTS.join(", ")}.`,
       cases: [
         { slug: "akasm", title: "akasm — brand production", sub: "Campaigns and content systems for national clients" },
@@ -155,25 +192,16 @@ export const site = {
       ],
     },
     {
-      id: "costar",
-      company: "CoStar Group",
-      chips: ["Co"],
-      role: "Regional Visual Media Lead / Field Research Photographer",
-      years: "06/2023 — 06/2025",
-      gutter: "GGH",
-      description:
-        "All visual media deliverables for every CoStar subsidiary across the Greater Golden Horseshoe — 14,600+ listings, 20+ commercial properties a day for two years, and 1,687 drone flights. Part of the team that launched Apartments.com in Canada.",
-      cases: [
-        { slug: "costar", title: "CoStar — field media", sub: "Interiors, exteriors, aerials and virtual tours at regional scale" },
-      ],
-    },
-    {
       id: "studio-nostalgia",
       company: "Studio Nostalgia",
       chips: ["SN"],
       role: "Studio Lead",
       years: "2020 — 2023",
       gutter: "STUDIO",
+      proof: [
+        "Led the studio's creative output across seasonal and graduation programmes.",
+        "Trained and mentored seasonal teams of up to 15.",
+      ],
       description:
         "Graduation and studio portrait photography at volume. Led the studio's creative output and trained and mentored seasonal teams of up to 15.",
       cases: [
@@ -181,34 +209,39 @@ export const site = {
       ],
     },
     {
-      id: "rbc",
-      company: "RBC",
-      chips: ["RBC"],
-      role: "Credit Supervisor",
-      years: "2018 — 2020",
-      gutter: "BANKING",
+      id: "costar",
+      company: "CoStar Group",
+      chips: ["Co"],
+      role: "Regional Visual Media Lead / Field Research Photographer",
+      years: "06/2023 — 06/2025",
+      gutter: "GGH",
+      proof: [
+        "14,600+ listings across the Greater Golden Horseshoe — 20+ commercial properties a day for two years.",
+        "1,687 drone flights (1,580 km · 157 h) · Apartments.com Canada launch team.",
+      ],
       description:
-        "Supervised live client account and credit casework in a high-volume centre — assigning, reviewing and verifying work against bank compliance standards.",
+        "All visual media deliverables for every CoStar subsidiary across the Greater Golden Horseshoe — 14,600+ listings, 20+ commercial properties a day for two years, and 1,687 drone flights. Part of the team that launched Apartments.com in Canada.",
+      cases: [
+        { slug: "costar", title: "CoStar — field media", sub: "Interiors, exteriors, aerials and virtual tours at regional scale" },
+      ],
     },
     {
-      id: "bmo",
-      company: "BMO",
-      chips: ["BMO"],
-      role: "General Banking Specialist",
-      years: "2016 — 2018",
-      gutter: "BANKING",
+      id: "bricks",
+      company: "Bricks",
+      chips: ["Br"],
+      role: "Production & Operations Lead",
+      years: "2025 — Present",
+      gutter: "OPS",
+      current: true,
+      proof: [
+        "Book → pay → auto-assign → shoot → delivered.",
+        "Sole operator, owning pricing, margin and resourcing with full P&L accountability.",
+      ],
       description:
-        "Front-line client service across multiple banking systems, resolving account inquiries at first point of contact.",
-    },
-    {
-      id: "royal-lepage",
-      company: "Royal LePage Signature",
-      chips: ["RL"],
-      role: "Administrative Assistant / Receptionist",
-      years: "2014 — 2015",
-      gutter: "BROKERAGE",
-      description: "Front-of-house at a real-estate brokerage in Mississauga.",
-      show: false, // On the résumé but not in the brief — set true to show.
+        "A Canadian real-estate media and operations platform — book → pay → auto-assign → shoot → delivered. Run as sole operator, owning pricing, margin, resourcing and revenue decisions with full P&L accountability.",
+      cases: [
+        { slug: "bricks", title: "Bricks", sub: "Listing media, end to end — book, shoot, deliver" },
+      ],
     },
   ] satisfies Entry[] as Entry[],
 
@@ -232,6 +265,13 @@ export const site = {
     { caption: "Lancia Integrale suspended in a desert study", src: w("gallery", "lancia-integrale.jpg") },
     { caption: "Figure in a yellow tee in a green field", src: w("gallery", "garm-field.jpg") },
   ],
+
+  /** First stop on the CV map: where the boarding pass lands. */
+  arrivals: {
+    label: "Arrivals · YYZ",
+    line: "Wheels down at Toronto Pearson — London → Toronto.",
+    sub: "Scroll to drive the route, from the first job to now.",
+  },
 
   outro: {
     line: "Wheels down. Thanks for boarding.",

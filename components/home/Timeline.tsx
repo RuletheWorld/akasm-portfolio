@@ -64,20 +64,15 @@ export default function Timeline() {
       </div>
       <div className="folio-timeline" id={TIMELINE_ID}>
         <FlightPath timelineId={TIMELINE_ID} />
-        {entries.map((e, i) => <EntryView key={e.id} e={e} i={i + 1} />)}
-        <article className="tl-entry" style={{ ["--i" as string]: entries.length + 1 }}>
+        <article className="tl-entry" style={{ ["--i" as string]: 0 }}>
           <div className="tl-head">
             <span className="tl-dot tl-dot-past" />
-            <span className="tl-year" aria-hidden><small>LICENCES</small>CERT</span>
-            <h3 className="tl-company">Credentials</h3>
+            <span className="tl-year" aria-hidden><small>ARRIVALS</small>YYZ</span>
+            <h3 className="tl-company">{site.arrivals.label}</h3>
           </div>
-          <ul className="tl-creds">
-            {site.credentials.map((c) => (
-              <li key={c.label}><span className="mono-label">{c.label}</span>{c.value}</li>
-            ))}
-          </ul>
-          <p className="tl-desc tl-tools">{site.tools.join(" · ")}</p>
+          <p className="tl-desc">{site.arrivals.line}</p>
         </article>
+        {entries.map((e, i) => <EntryView key={e.id} e={e} i={i + 1} />)}
       </div>
     </section>
   );

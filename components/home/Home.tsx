@@ -1,7 +1,7 @@
 import { site } from "@/content/site";
 import StickyInfo from "./StickyInfo";
 import HeroWindow from "./HeroWindow";
-import Timeline from "./Timeline";
+import Journey from "./journey/Journey";
 import Memories from "./Memories";
 import Footer from "./Footer";
 
@@ -24,7 +24,20 @@ export default function Home() {
           </div>
         </header>
 
-        <Timeline />
+      </div>
+
+      <Journey />
+
+      <div className="folio-col">
+        <section className="folio-creds reveal" aria-label="Credentials">
+          <h2 className="mono-label">Credentials</h2>
+          <ul className="tl-creds">
+            {site.credentials.map((c) => (
+              <li key={c.label}><span className="mono-label">{c.label}</span>{c.value}</li>
+            ))}
+          </ul>
+          <p className="tl-desc tl-tools">{site.tools.join(" · ")}</p>
+        </section>
 
         <section className="folio-about reveal" style={{ ["--reveal-delay" as string]: "200ms" }} aria-label="About">
           <h2 className="mono-label">About</h2>
