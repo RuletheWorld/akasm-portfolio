@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Splash from "./Splash";
 import SkipLink from "./SkipLink";
 import StaticPass from "./StaticPass";
+import GLBoundary from "@/components/GLBoundary";
 import { canRun3D } from "@/lib/canRun3D";
 import { KEY_UNLOCKED, store } from "@/lib/storage";
 import { play } from "@/lib/sound";
@@ -109,7 +110,9 @@ export default function Gate() {
     <div className="gate" data-phase={phase} data-mode={mode ?? undefined} data-status={status} role="dialog" aria-label="Boarding gate">
       {mode === "3d" && (
         <div className="gate-stage">
-          <Scene status={status} setStatus={setStatus} onSwiped={grant} onReady={leaveSplash} bg={bg} />
+          <GLBoundary fallback={null} onFail={() => setMode("2d")}>
+            <Scene status={status} setStatus={setStatus} onSwiped={grant} onReady={leaveSplash} bg={bg} />
+          </GLBoundary>
           <button type="button" className="pass-focus" data-pass="1" onClick={grant} aria-label="Boarding pass. Press Enter to board.">
             <span className="sr-only">Board</span>
           </button>

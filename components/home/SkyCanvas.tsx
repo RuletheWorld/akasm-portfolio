@@ -4,9 +4,9 @@
  * - Seeded per load (or `?seed=12` for repeatable screenshots).
  * - Raymarched at reduced resolution (upscaled + softened by CSS), dithered, <= 30fps,
  *   and only while on screen and the tab is visible. `?skyperf` records GPU frame times.
- * - prefers-reduced-motion: renders a single static frame.
+ * - prefers-reduced-motion: keeps the 3D sky, drifting at a fifth of the speed (never swaps to 2D).
  * - Follows the theme (day <-> night) with a short crossfade.
- * - No WebGL: paints a static seeded noise deck once with 2D canvas.
+ * - No WebGL (or ?static): paints a static seeded noise deck once with 2D canvas.
  */
 import { useEffect, useRef } from "react";
 import { SKY_FRAG, SKY_VERT, makeNoiseTable } from "@/lib/skyShader";
@@ -37,7 +37,8 @@ export default function SkyCanvas() {
       return false;
     };
 
-    const gl = cv.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "low-power" });
+    const forceStatic = new URLSearchParams(location.search).has("static");
+    const gl = forceStatic ? null : cv.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "low-power" });
     if (!gl) {
       // static 2D fallback, still procedural
       const paint = () => { size(); paintFallback(cv, seed, isDark()); };
@@ -101,15 +102,12 @@ export default function SkyCanvas() {
       const dt = st.last ? Math.min(0.1, (now - st.last) / 1000) : 0;
       if (st.last && now - st.last < 32) { st.raf = requestAnimationFrame(frame); return; } // ~30fps cap
       st.last = now;
-      const still = reduce.matches;
-      if (still) st.night = st.target;
-      else {
-        st.time += dt;
-        st.night += (st.target - st.night) * Math.min(1, dt * 4.5);
-        if (Math.abs(st.target - st.night) < 0.002) st.night = st.target;
-      }
+      // reduced motion: same sky, slower drift
+      st.time += dt * (reduce.matches ? 0.2 : 1);
+      st.night += (st.target - st.night) * Math.min(1, dt * 4.5);
+      if (Math.abs(st.target - st.night) < 0.002) st.night = st.target;
       draw();
-      if (!still) st.raf = requestAnimationFrame(frame);
+      st.raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!st.raf) { st.last = 0; st.raf = requestAnimationFrame(frame); } };
 

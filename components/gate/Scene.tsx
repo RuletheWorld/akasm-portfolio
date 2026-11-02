@@ -15,6 +15,7 @@ import { clamp, damp, smoothstep, spring, type Spring } from "@/lib/motion";
 import { drawLcd, LED, makePaperTexture, makeScratchTexture, type LcdStatus } from "@/lib/textures";
 import { drawPassBack, drawPassFront, passFonts } from "@/lib/passArt";
 import { play, playThrottled } from "@/lib/sound";
+import { softMotion } from "@/lib/canRun3D";
 
 if (typeof window !== "undefined") RectAreaLightUniformsLib.init();
 
@@ -111,7 +112,14 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     slant: { x: 0, v: 0 } as Spring,
     ndc: new THREE.Vector2(),
     lastErr: 0,
+    // drag follow springs: the card trails the pointer with a little weight instead of snapping to it
+    fx: { x: 0, v: 0 } as Spring,
+    fy: { x: OM.hoverY, v: 0 } as Spring,
+    // respawn drop-in offset (falls in from above with a small bounce)
+    drop: { x: 0, v: 0 } as Spring,
+    calm: false,
   });
+  useEffect(() => { st.current.calm = softMotion(); }, []);
 
   const { mats, depthMats, uFront, uBack } = useMemo(() => {
     const uFront: CurveU = { uCurve: { value: 0 }, uSlant: { value: 0 } };
@@ -171,6 +179,7 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     s.grabLocal.set(hit.x - t.x, hit.y - t.y, 0).applyQuaternion(s.q.clone().invert());
     s.grabLocal.z = 0;
     s.prevX = t.x; s.prevY = t.y;
+    s.fx.x = t.x; s.fy.x = t.y; s.fx.v = s.vel.x; s.fy.v = s.vel.y;
     if (s.mode !== "release") s.inSlot = false;
     s.mode = "drag";
     document.body.style.cursor = "grabbing";
@@ -186,8 +195,10 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     } else {
       b.setBodyType(RB_DYNAMIC, true);
       const rnd = () => Math.random() * 2 - 1;
-      b.setAngvel({ x: 0.9 * rnd(), y: 0.5 * rnd(), z: 0.7 * (Math.random() < 0.5 ? -1 : 1) }, true);
-      b.setLinvel({ x: clamp(s.vel.x * 0.55, -6, 6) - s.curRz * 1.6, y: clamp(s.vel.y * 0.45, -4, 5) + 0.3, z: 0 }, true);
+      // real throw: carry the drag momentum into the rigid body, spin from the sideways speed
+      const vx = clamp(s.vel.x * 0.9, -12, 12), vy = clamp(s.vel.y * 0.8, -8, 10);
+      b.setLinvel({ x: vx - s.curRz * 1.2, y: vy + 0.6, z: 0.4 * rnd() }, true);
+      b.setAngvel({ x: clamp(vy * 0.12, -1.5, 1.5) + 0.4 * rnd(), y: 0.5 * rnd(), z: clamp(-vx * 0.38, -4, 4) + 0.5 * rnd() }, true);
       s.stillMs = 0;
       s.mode = "fall";
     }
@@ -197,7 +208,8 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     const s = st.current, b = body.current;
     if (!b) return;
     b.setBodyType(RB_KINEMATIC, true);
-    b.setTranslation({ x: 0, y: OM.hoverY, z: 0 }, true);
+    s.drop.x = s.calm ? 0.25 : 1.5; s.drop.v = 0;
+    b.setTranslation({ x: 0, y: OM.hoverY + s.drop.x, z: 0 }, true);
     b.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     b.setLinvel({ x: 0, y: 0, z: 0 }, true);
     b.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -213,8 +225,10 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
     const s = st.current, t = state.clock.elapsedTime;
     switch (s.mode) {
       case "hover": {
-        b.setNextKinematicTranslation({ x: Math.sin(0.5 * t) * 0.05, y: OM.hoverY + Math.sin(1.2 * t) * 0.1, z: 0 });
-        const q = quat(Math.sin(0.7 * t) * 0.09, Math.sin(0.4 * t) * 0.06, Math.sin(0.9 * t) * 0.08);
+        const amp = s.calm ? 0.35 : 1;
+        spring(s.drop, 0, 90, 9, dt);
+        b.setNextKinematicTranslation({ x: Math.sin(0.5 * t) * 0.05 * amp, y: OM.hoverY + Math.sin(1.2 * t) * 0.1 * amp + s.drop.x, z: 0 });
+        const q = quat(Math.sin(0.7 * t) * 0.09 * amp, Math.sin(0.4 * t) * 0.06 * amp, Math.sin(0.9 * t) * 0.08 * amp + s.drop.v * 0.02);
         b.setNextKinematicRotation(q);
         s.q.copy(q);
         s.opacity = Math.min(1, s.opacity + dt / OM.fadeInS);
@@ -265,7 +279,11 @@ function PassCard({ textures, statusRef, setStatus, onSwiped, cardY }: {
         }
         s.curRz = damp(s.curRz, rz, s.inSlot ? 8 : 4.5, dt);
         s.q.slerp(quat(s.rx, 0, s.curRz), 1 - Math.exp(-16 * dt));
-        b.setNextKinematicTranslation({ x: p.x, y: ty, z: s.z });
+        // weighted follow: stiff in the slot (precise swipe), looser in the air (momentum, overshoot)
+        const k = s.inSlot ? 900 : 520, c = s.inSlot ? 60 : 40;
+        spring(s.fx, p.x, k, c, dt);
+        spring(s.fy, ty, k, c, dt);
+        b.setNextKinematicTranslation({ x: s.fx.x, y: s.fy.x, z: s.z });
         b.setNextKinematicRotation(s.q);
         s.prevY = p.y; s.prevX = p.x;
         s.opacity = Math.min(1, s.opacity + dt / OM.fadeInS);
@@ -393,7 +411,7 @@ function Reader({ status, cardY }: { status: LcdStatus; cardY: React.MutableRefO
   const H = READER_H, D = READER_D, W = READER_W, gap = 0.035, shellD = D / 2 - gap;
   const fz = D / 2; // front face z
   const paperMat = (map: THREE.Texture) => (
-    <meshStandardMaterial map={map} bumpMap={scratch} bumpScale={0.45} roughnessMap={scratch} roughness={0.85} envMapIntensity={0.9} />
+    <meshStandardMaterial map={map} bumpMap={scratch} bumpScale={0.08} roughness={0.82} envMapIntensity={0.9} />
   );
   return (
     <group position={[0, OM.readerY, 0]} rotation-x={READER_TILT}>
@@ -425,8 +443,6 @@ function Reader({ status, cardY }: { status: LcdStatus; cardY: React.MutableRefO
           ))}
         </group>
       ))}
-      {/* base plinth */}
-      <mesh position={[0, -H / 2 - 0.03, 0]} receiveShadow><boxGeometry args={[W - 0.08, 0.06, D - 0.08]} /><meshStandardMaterial color="#1c1b19" roughness={0.9} /></mesh>
       {/* LCD bezel + screen */}
       <RoundedBox args={[1.5, 0.46, 0.04]} radius={0.03} smoothness={2} position={[0, -0.17, fz + 0.005]}>
         <meshStandardMaterial color="#232322" roughness={0.55} />
@@ -459,8 +475,7 @@ function StudioLights() {
   return (
     <>
       <ambientLight intensity={0.72} />
-      <directionalLight position={[4, 6, 6]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-1e-4} shadow-normalBias={0.045}
-        shadow-camera-left={-3.4} shadow-camera-right={3.4} shadow-camera-top={3.4} shadow-camera-bottom={-3.4} />
+      <directionalLight position={[4, 6, 6]} intensity={1.55} />
       <rectAreaLight position={[0, 4.2, 3]} width={7} height={4} intensity={1.7} color="#fffdf7" onUpdate={(l) => l.lookAt(0, -0.4, 0)} />
       <Environment resolution={128}>
         <group rotation={[-Math.PI / 3, 0, 1]}>
@@ -521,7 +536,6 @@ export default function Scene(p: SceneProps) {
   }, [force]);
   return (
     <Canvas
-      shadows="soft"
       dpr={[1, 1.5]}
       camera={{ position: [0, 0, 13], fov: 25, near: 0.1, far: 100 }}
       gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}

@@ -65,12 +65,24 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
   );
 }
 
+/**
+ * Figures break out of the 512px text column: the cover runs up to 1280px, landscape frames
+ * 1100px (the old portfolio's .wide), portrait frames 640px. `sizes` matches those widths so
+ * next/image serves 2x files on retina; quality 90 (allowed in next.config images.qualities).
+ */
+const FIG = {
+  hero: { cls: "is-hero", sizes: "(max-width: 1320px) calc(100vw - 40px), 1280px" },
+  wide: { cls: "is-wide", sizes: "(max-width: 1140px) calc(100vw - 40px), 1100px" },
+  tall: { cls: "is-tall", sizes: "(max-width: 680px) calc(100vw - 40px), 640px" },
+};
+
 function Figure({ f, priority }: { f: Fig; priority?: boolean }) {
   const [w, h] = dims(f.src);
+  const kind = priority ? FIG.hero : w >= h * 1.15 ? FIG.wide : FIG.tall;
   return (
-    <figure className="cs-fig cs-reveal">
+    <figure className={`cs-fig ${kind.cls} cs-reveal`}>
       <div className="cs-frame" style={{ aspectRatio: `${w} / ${h}` }}>
-        <Image src={f.src} alt={f.caption} width={w} height={h} sizes="(max-width: 760px) 100vw, 720px" priority={priority} />
+        <Image src={f.src} alt={f.caption} width={w} height={h} sizes={kind.sizes} quality={90} priority={priority} />
       </div>
       <figcaption>{f.caption}</figcaption>
     </figure>
